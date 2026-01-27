@@ -65,7 +65,7 @@ export function AuthPage({ clinics, onLogin, onRegister }: AuthPageProps) {
     };
 
     onRegister(newClinic);
-    toast.success('Registration successful! Please login.');
+    toast.success('Registration successful! Please login....');
   };
 
   return (
