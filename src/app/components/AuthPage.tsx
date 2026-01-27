@@ -207,10 +207,10 @@ export function AuthPage({ clinics, onLogin, onRegister }: AuthPageProps) {
                   Login
                 </Button>
                 <div className="text-sm text-center text-muted-foreground">
-                  <p>Demo credentials:</p>
-                  <p className="font-mono text-xs mt-1">priya@sevasadan.org</p>
-                  <p className="font-mono text-xs">rajesh@gramswasthya.gov.in</p>
-                  <p className="font-mono text-xs">anjali@hopefoundation.org</p>
+                  <p>Demo credentials: ENTER ANY EMAIL AND ENTER THIS PASSWORD</p>
+                  <p className="font-mono text-xs mt-1">EMAIL : priya@sevasadan.org</p>
+                  <p className="font-mono text-xs">EMAIL: rajesh@gramswasthya.gov.in</p>
+                  <p className="font-mono text-xs">PASSWORD: 12345678</p>
                 </div>
               </CardContent>
             </TabsContent>
