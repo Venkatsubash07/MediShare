@@ -100,19 +100,29 @@ export function Dashboard({ clinic, inventory, surplusPosts, requests, transfers
             <CardContent>
               <ul className="space-y-2">
                 {expiringItems.slice(0, 3).map((item) => {
-                  const medicine = medicines.find(m => m.id === item.medicineId);
-                  const daysUntilExpiry = Math.ceil(
-                    (item.expiryDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
-                  );
-                  return (
-                    <li key={item.id} className="text-sm">
-                      <span className="font-medium">{medicine?.name}</span> - {item.quantity} {item.unit}
-                      <span className="text-orange-600 ml-2">
-                        (Expires in {daysUntilExpiry} days)
-                      </span>
-                    </li>
-                  );
-                })}
+  const medicine = medicines.find(m => m.id === item.medicineId);
+
+  const expiry =
+    item.expiryDate instanceof Date
+      ? item.expiryDate
+      : typeof item.expiryDate === 'object' && 'toDate' in item.expiryDate
+      ? (item.expiryDate as any).toDate()
+      : new Date(item.expiryDate);
+
+  const daysUntilExpiry = Math.ceil(
+    (expiry.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+  );
+
+  return (
+    <li key={item.id} className="text-sm">
+      <span className="font-medium">{medicine?.name}</span> - {item.quantity} {item.unit}
+      <span className="text-orange-600 ml-2">
+        (Expires in {daysUntilExpiry} days)
+      </span>
+    </li>
+  );
+})}
+
               </ul>
             </CardContent>
           </Card>

@@ -19,6 +19,14 @@ interface InventoryManagementProps {
   onAddMedicine: (medicine: Omit<Medicine, 'id'>) => Medicine;
 }
 
+/* 🔧 Universal date converter (handles Date, Firestore Timestamp, string) */
+const toDate = (value: any): Date => {
+  if (!value) return new Date();
+  if (value instanceof Date) return value;
+  if (value.seconds) return new Date(value.seconds * 1000); // Firestore Timestamp
+  return new Date(value);
+};
+
 export function InventoryManagement({ clinic, inventory, medicines, onAddInventory, onAddMedicine }: InventoryManagementProps) {
   const [open, setOpen] = useState(false);
   const [selectedMedicine, setSelectedMedicine] = useState('');
@@ -39,7 +47,6 @@ export function InventoryManagement({ clinic, inventory, medicines, onAddInvento
   const handleAddInventory = () => {
     let medicineId = selectedMedicine;
 
-    // If manual entry, create a new medicine first
     if (isManualEntry) {
       if (!manualMedicineName || !manualGenericName || !manualStrength || !manualManufacturer) {
         toast.error('Please fill in all medicine fields');
@@ -64,8 +71,9 @@ export function InventoryManagement({ clinic, inventory, medicines, onAddInvento
     }
 
     const expiryDateObj = new Date(expiryDate);
-    const today = new Date();
-    const daysUntilExpiry = Math.ceil((expiryDateObj.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    const daysUntilExpiry = Math.ceil(
+      (expiryDateObj.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+    );
 
     let status: 'In Stock' | 'Low Stock' | 'Expiring Soon' | 'Expired' = 'In Stock';
     if (daysUntilExpiry < 0) status = 'Expired';
@@ -97,21 +105,17 @@ export function InventoryManagement({ clinic, inventory, medicines, onAddInvento
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'In Stock':
-        return 'bg-green-100 text-green-800';
-      case 'Low Stock':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'Expiring Soon':
-        return 'bg-orange-100 text-orange-800';
-      case 'Expired':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+      case 'In Stock': return 'bg-green-100 text-green-800';
+      case 'Low Stock': return 'bg-yellow-100 text-yellow-800';
+      case 'Expiring Soon': return 'bg-orange-100 text-orange-800';
+      case 'Expired': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const formatDate = (date: Date) => {
-    return new Date(date).toLocaleDateString('en-IN', {
+  const formatDate = (date: any) => {
+    const realDate = toDate(date);
+    return realDate.toLocaleDateString('en-IN', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
@@ -125,6 +129,7 @@ export function InventoryManagement({ clinic, inventory, medicines, onAddInvento
           <h2 className="text-2xl font-bold">Inventory Management</h2>
           <p className="text-muted-foreground">Track and manage your medicine stock</p>
         </div>
+
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button>
@@ -132,172 +137,38 @@ export function InventoryManagement({ clinic, inventory, medicines, onAddInvento
               Add Medicine
             </Button>
           </DialogTrigger>
+
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Add Inventory Item</DialogTitle>
-              <DialogDescription>
-                Add a new medicine to your inventory
-              </DialogDescription>
+              <DialogDescription>Add a new medicine to your inventory</DialogDescription>
             </DialogHeader>
+
             <div className="grid gap-4 py-4">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="medicine">Medicine</Label>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setIsManualEntry(!isManualEntry);
-                      setSelectedMedicine('');
-                    }}
-                  >
-                    {isManualEntry ? 'Select from list' : 'Enter manually'}
-                  </Button>
-                </div>
-                {!isManualEntry ? (
-                  <Select value={selectedMedicine} onValueChange={setSelectedMedicine}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select medicine" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {medicines.map((med) => (
-                        <SelectItem key={med.id} value={med.id}>
-                          {med.name} ({med.strength}) - {med.category}
-                          {med.priority && ` [${med.priority}]`}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <div className="space-y-3 p-3 border rounded-lg bg-gray-50">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-2">
-                        <Label htmlFor="manual-name">Medicine Name *</Label>
-                        <Input
-                          id="manual-name"
-                          value={manualMedicineName}
-                          onChange={(e) => setManualMedicineName(e.target.value)}
-                          placeholder="e.g., Paracetamol"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="manual-generic">Generic Name *</Label>
-                        <Input
-                          id="manual-generic"
-                          value={manualGenericName}
-                          onChange={(e) => setManualGenericName(e.target.value)}
-                          placeholder="e.g., Acetaminophen"
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-2">
-                        <Label htmlFor="manual-category">Category *</Label>
-                        <Select value={manualCategory} onValueChange={(val) => setManualCategory(val as any)}>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Antibiotic">Antibiotic</SelectItem>
-                            <SelectItem value="Painkiller">Painkiller</SelectItem>
-                            <SelectItem value="Antiseptic">Antiseptic</SelectItem>
-                            <SelectItem value="Antidiabetic">Antidiabetic</SelectItem>
-                            <SelectItem value="Antihypertensive">Antihypertensive</SelectItem>
-                            <SelectItem value="Vitamin">Vitamin</SelectItem>
-                            <SelectItem value="Vaccine">Vaccine</SelectItem>
-                            <SelectItem value="Other">Other</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="manual-priority">Priority *</Label>
-                        <Select value={manualPriority} onValueChange={(val) => setManualPriority(val as any)}>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Critical">Critical (Life-saving)</SelectItem>
-                            <SelectItem value="Essential">Essential</SelectItem>
-                            <SelectItem value="Standard">Standard</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-2">
-                        <Label htmlFor="manual-strength">Strength *</Label>
-                        <Input
-                          id="manual-strength"
-                          value={manualStrength}
-                          onChange={(e) => setManualStrength(e.target.value)}
-                          placeholder="e.g., 500mg"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="manual-manufacturer">Manufacturer *</Label>
-                        <Input
-                          id="manual-manufacturer"
-                          value={manualManufacturer}
-                          onChange={(e) => setManualManufacturer(e.target.value)}
-                          placeholder="e.g., Sun Pharma"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="batch">Batch Number</Label>
-                <Input
-                  id="batch"
-                  value={batchNumber}
-                  onChange={(e) => setBatchNumber(e.target.value)}
-                  placeholder="e.g., AMX2024-001"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="quantity">Quantity</Label>
-                  <Input
-                    id="quantity"
-                    type="number"
-                    value={quantity}
-                    onChange={(e) => setQuantity(e.target.value)}
-                    placeholder="e.g., 1000"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="unit">Unit</Label>
-                  <Select value={unit} onValueChange={(val) => setUnit(val as any)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="tablets">Tablets</SelectItem>
-                      <SelectItem value="capsules">Capsules</SelectItem>
-                      <SelectItem value="ml">ML</SelectItem>
-                      <SelectItem value="vials">Vials</SelectItem>
-                      <SelectItem value="strips">Strips</SelectItem>
-                      <SelectItem value="bottles">Bottles</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="expiry">Expiry Date</Label>
-                <Input
-                  id="expiry"
-                  type="date"
-                  value={expiryDate}
-                  onChange={(e) => setExpiryDate(e.target.value)}
-                />
-              </div>
+              <Label>Medicine</Label>
+              <Select value={selectedMedicine} onValueChange={setSelectedMedicine}>
+                <SelectTrigger><SelectValue placeholder="Select medicine" /></SelectTrigger>
+                <SelectContent>
+                  {medicines.map(med => (
+                    <SelectItem key={med.id} value={med.id}>
+                      {med.name} ({med.strength})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Label>Batch Number</Label>
+              <Input value={batchNumber} onChange={e => setBatchNumber(e.target.value)} />
+
+              <Label>Quantity</Label>
+              <Input type="number" value={quantity} onChange={e => setQuantity(e.target.value)} />
+
+              <Label>Expiry Date</Label>
+              <Input type="date" value={expiryDate} onChange={e => setExpiryDate(e.target.value)} />
             </div>
+
             <DialogFooter>
-              <Button variant="outline" onClick={() => setOpen(false)}>
-                Cancel
-              </Button>
+              <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
               <Button onClick={handleAddInventory}>Add Item</Button>
             </DialogFooter>
           </DialogContent>
@@ -307,59 +178,46 @@ export function InventoryManagement({ clinic, inventory, medicines, onAddInvento
       <Card>
         <CardHeader>
           <CardTitle>Current Inventory</CardTitle>
-          <CardDescription>
-            {clinicInventory.length} items in stock
-          </CardDescription>
+          <CardDescription>{clinicInventory.length} items in stock</CardDescription>
         </CardHeader>
+
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Medicine</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Batch Number</TableHead>
+                <TableHead>Batch</TableHead>
                 <TableHead>Quantity</TableHead>
-                <TableHead>Expiry Date</TableHead>
+                <TableHead>Expiry</TableHead>
                 <TableHead>Status</TableHead>
               </TableRow>
             </TableHeader>
+
             <TableBody>
               {clinicInventory.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                    <Package className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                    No inventory items yet. Add your first item to get started.
+                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                    No inventory items yet
                   </TableCell>
                 </TableRow>
               ) : (
-                clinicInventory.map((item) => {
+                clinicInventory.map(item => {
                   const medicine = medicines.find(m => m.id === item.medicineId);
                   const daysUntilExpiry = Math.ceil(
-                    (item.expiryDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+                    (toDate(item.expiryDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
                   );
+
                   return (
                     <TableRow key={item.id}>
-                      <TableCell className="font-medium">
-                        {medicine?.name}
-                        <div className="text-sm text-muted-foreground">
-                          {medicine?.strength}
-                        </div>
-                      </TableCell>
-                      <TableCell>{medicine?.category}</TableCell>
-                      <TableCell className="font-mono text-sm">{item.batchNumber}</TableCell>
+                      <TableCell>{medicine?.name}</TableCell>
+                      <TableCell>{item.batchNumber}</TableCell>
+                      <TableCell>{item.quantity} {item.unit}</TableCell>
                       <TableCell>
-                        {item.quantity.toLocaleString()} {item.unit}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          {formatDate(item.expiryDate)}
-                          {daysUntilExpiry > 0 && daysUntilExpiry < 90 && (
-                            <span className="text-xs text-orange-600">
-                              ({daysUntilExpiry}d)
-                            </span>
-                          )}
-                        </div>
+                        <Calendar className="inline h-4 w-4 mr-1" />
+                        {formatDate(item.expiryDate)}
+                        {daysUntilExpiry > 0 && daysUntilExpiry < 90 && (
+                          <span className="text-xs text-orange-600 ml-1">({daysUntilExpiry}d)</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         <Badge className={getStatusColor(item.status)}>

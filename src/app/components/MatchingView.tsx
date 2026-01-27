@@ -1,4 +1,4 @@
-import { Clinic, InventoryItem, SurplusPosting, MedicineRequest, Medicine, Transfer } from '@/app/types';
+import { Clinic, InventoryItem, SurplusPosting, MedicineRequest, Medicine } from '@/app/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
 import { Badge } from '@/app/components/ui/badge';
@@ -27,6 +27,14 @@ interface Match {
   daysUntilExpiry: number;
 }
 
+/* 🔧 Firestore-safe date converter */
+const toDate = (value: any): Date => {
+  if (!value) return new Date();
+  if (value instanceof Date) return value;
+  if (value.seconds) return new Date(value.seconds * 1000); // Firestore Timestamp
+  return new Date(value);
+};
+
 export function MatchingView({
   clinic,
   clinics,
@@ -36,7 +44,7 @@ export function MatchingView({
   medicines,
   onRequestTransfer
 }: MatchingViewProps) {
-  // Find all potential matches
+
   const findMatches = (): Match[] => {
     const matches: Match[] = [];
     const availableSurplus = surplusPosts.filter(s => s.status === 'Available');
@@ -58,13 +66,10 @@ export function MatchingView({
           if (!toClinic) return;
 
           const daysUntilExpiry = Math.ceil(
-            (inventoryItem.expiryDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+            (toDate(inventoryItem.expiryDate).getTime() - new Date().getTime()) /
+              (1000 * 60 * 60 * 24)
           );
 
-          // Calculate match score based on:
-          // - Urgency (40%)
-          // - Days until expiry (30%)
-          // - Quantity match (30%)
           let urgencyScore = 0;
           switch (request.urgency) {
             case 'Critical': urgencyScore = 100; break;
@@ -95,13 +100,11 @@ export function MatchingView({
       });
     });
 
-    // Sort by match score descending
     return matches.sort((a, b) => b.matchScore - a.matchScore);
   };
 
   const matches = findMatches();
-  
-  // Filter matches relevant to the current clinic
+
   const relevantMatches = matches.filter(
     match => match.fromClinic.id === clinic.id || match.toClinic.id === clinic.id
   );
@@ -118,8 +121,9 @@ export function MatchingView({
     return 'bg-orange-100 text-orange-800';
   };
 
-  const formatDate = (date: Date) => {
-    return new Date(date).toLocaleDateString('en-IN', {
+  const formatDate = (date: any) => {
+    const realDate = toDate(date);
+    return realDate.toLocaleDateString('en-IN', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
@@ -141,186 +145,55 @@ export function MatchingView({
             <CardContent className="py-12 text-center">
               <CheckCircle2 className="h-12 w-12 mx-auto mb-4 text-green-500 opacity-50" />
               <p className="text-muted-foreground">
-                No matches found at the moment. Check back later or create new requests.
+                No matches found at the moment.
               </p>
             </CardContent>
           </Card>
         ) : (
-          relevantMatches.map((match, index) => (
+          relevantMatches.map(match => (
             <Card key={`${match.surplus.id}-${match.request.id}`} className="overflow-hidden">
               <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <CardTitle className="flex items-center gap-2">
-                      {match.medicine.name}
-                      <Badge className={getMatchScoreColor(match.matchScore)}>
-                        {match.matchScore}% Match
-                      </Badge>
-                    </CardTitle>
-                    <CardDescription className="mt-1">
-                      {match.medicine.genericName} • {match.medicine.category} • {match.medicine.strength}
-                    </CardDescription>
-                  </div>
-                </div>
+                <CardTitle className="flex items-center gap-2">
+                  {match.medicine.name}
+                  <Badge className={getMatchScoreColor(match.matchScore)}>
+                    {match.matchScore}% Match
+                  </Badge>
+                </CardTitle>
+                <CardDescription>
+                  {match.medicine.genericName} • {match.medicine.category} • {match.medicine.strength}
+                </CardDescription>
               </CardHeader>
+
               <CardContent className="pt-6">
                 <div className="grid md:grid-cols-2 gap-6">
-                  {/* From (Surplus) */}
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-sm font-medium text-green-700">
-                      <div className="h-2 w-2 rounded-full bg-green-600"></div>
-                      Surplus Available
-                    </div>
-                    <div className="space-y-2 pl-4 border-l-2 border-green-200">
-                      <div>
-                        <div className="font-semibold">{match.fromClinic.name}</div>
-                        <div className="text-sm text-muted-foreground flex items-center gap-1">
-                          <MapPin className="h-3 w-3" />
-                          {match.fromClinic.location}, {match.fromClinic.district}
-                        </div>
-                      </div>
-                      <div className="text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Quantity:</span>
-                          <span className="font-medium">
-                            {match.surplus.quantity.toLocaleString()} {match.inventoryItem.unit}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Batch:</span>
-                          <span className="font-mono text-xs">{match.inventoryItem.batchNumber}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-muted-foreground">Expires:</span>
-                          <span className={`flex items-center gap-1 ${
-                            match.daysUntilExpiry < 60 ? 'text-orange-600' : 'text-gray-700'
-                          }`}>
-                            <Calendar className="h-3 w-3" />
-                            {formatDate(match.inventoryItem.expiryDate)}
-                            {match.daysUntilExpiry < 90 && (
-                              <span className="text-xs">({match.daysUntilExpiry}d)</span>
-                            )}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Reason:</span>
-                          <Badge variant="outline" className="text-xs">
-                            {match.surplus.reason}
-                          </Badge>
-                        </div>
-                      </div>
-                      {match.surplus.notes && (
-                        <div className="text-xs text-muted-foreground bg-gray-50 p-2 rounded">
-                          "{match.surplus.notes}"
-                        </div>
-                      )}
-                    </div>
+
+                  {/* Surplus */}
+                  <div>
+                    <div className="font-semibold">{match.fromClinic.name}</div>
+                    <p className="text-sm">{formatDate(match.inventoryItem.expiryDate)}</p>
                   </div>
 
-                  {/* Arrow */}
-                  <div className="hidden md:flex items-center justify-center absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-                    <div className="bg-white rounded-full p-2 shadow-md">
-                      <ArrowRight className="h-6 w-6 text-blue-600" />
-                    </div>
-                  </div>
-
-                  {/* To (Request) */}
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-sm font-medium text-blue-700">
-                      <div className="h-2 w-2 rounded-full bg-blue-600"></div>
-                      Request Open
-                    </div>
-                    <div className="space-y-2 pl-4 border-l-2 border-blue-200">
-                      <div>
-                        <div className="font-semibold">{match.toClinic.name}</div>
-                        <div className="text-sm text-muted-foreground flex items-center gap-1">
-                          <MapPin className="h-3 w-3" />
-                          {match.toClinic.location}, {match.toClinic.district}
-                        </div>
-                      </div>
-                      <div className="text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Needed:</span>
-                          <span className="font-medium">
-                            {match.request.quantity.toLocaleString()} {match.request.unit}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Urgency:</span>
-                          <Badge 
-                            variant="outline"
-                            className={
-                              match.request.urgency === 'Critical' ? 'border-red-300 text-red-700' :
-                              match.request.urgency === 'High' ? 'border-orange-300 text-orange-700' :
-                              match.request.urgency === 'Medium' ? 'border-yellow-300 text-yellow-700' :
-                              'border-green-300 text-green-700'
-                            }
-                          >
-                            {match.request.urgency}
-                          </Badge>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Requested:</span>
-                          <span className="text-xs">{formatDate(match.request.requestedDate)}</span>
-                        </div>
-                      </div>
-                      <div className="text-xs text-muted-foreground bg-blue-50 p-2 rounded">
-                        "{match.request.reason}"
-                      </div>
-                    </div>
+                  {/* Request */}
+                  <div>
+                    <div className="font-semibold">{match.toClinic.name}</div>
+                    <p className="text-sm">{formatDate(match.request.requestedDate)}</p>
                   </div>
                 </div>
 
                 <Separator className="my-4" />
 
-                {/* Match Info and Actions */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4 text-sm">
-                    {match.daysUntilExpiry < 60 && (
-                      <div className="flex items-center gap-1 text-orange-600">
-                        <AlertCircle className="h-4 w-4" />
-                        <span>Urgent: Expires soon</span>
-                      </div>
-                    )}
-                    {match.surplus.quantity >= match.request.quantity && (
-                      <div className="flex items-center gap-1 text-green-600">
-                        <CheckCircle2 className="h-4 w-4" />
-                        <span>Full quantity available</span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex gap-2">
-                    {match.fromClinic.id === clinic.id && (
-                      <Button variant="outline" size="sm" disabled>
-                        Your Surplus
-                      </Button>
-                    )}
-                    {match.toClinic.id === clinic.id && (
-                      <Button size="sm" onClick={() => handleRequestTransfer(match)}>
-                        Request Transfer
-                      </Button>
-                    )}
-                    {match.fromClinic.id !== clinic.id && match.toClinic.id !== clinic.id && (
-                      <Badge variant="secondary">Other Clinics</Badge>
-                    )}
-                  </div>
+                <div className="flex justify-end">
+                  {match.toClinic.id === clinic.id && (
+                    <Button size="sm" onClick={() => handleRequestTransfer(match)}>
+                      Request Transfer
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
           ))
         )}
       </div>
-
-      {/* All Matches Count */}
-      {matches.length > relevantMatches.length && (
-        <Card className="bg-blue-50 border-blue-200">
-          <CardContent className="py-4">
-            <p className="text-sm text-blue-800 text-center">
-              {matches.length - relevantMatches.length} additional matches available between other clinics in the network
-            </p>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }
