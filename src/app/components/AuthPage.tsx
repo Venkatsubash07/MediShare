@@ -9,6 +9,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/ta
 import { Building2, Heart, Users } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword } from "firebase/auth"
+import { doc, getDoc , setDoc} from "firebase/firestore";
+import { auth, db } from "@/lib/firebase";
+
 interface AuthPageProps {
   clinics: Clinic[];
   onLogin: (clinic: Clinic) => void;
@@ -31,29 +36,69 @@ export function AuthPage({ clinics, onLogin, onRegister }: AuthPageProps) {
   const [regEmail, setRegEmail] = useState('');
   const [regPassword, setRegPassword] = useState('');
 
-  const handleLogin = () => {
-    if (!loginEmail || !loginPassword) {
-      toast.error('Please enter email and password');
+ const handleLogin = async () => {
+  if (!loginEmail || !loginPassword) {
+    toast.error("Please enter email and password");
+    return;
+  }
+
+  try {
+    // 🔐 Firebase Authentication
+    const userCredential = await signInWithEmailAndPassword(
+      auth,
+      loginEmail,
+      loginPassword
+    );
+
+    const user = userCredential.user;
+
+    // 📄 Fetch clinic profile from Firestore
+    const clinicRef = doc(db, "clinics", user.uid);
+    const clinicSnap = await getDoc(clinicRef);
+
+    if (!clinicSnap.exists()) {
+      toast.error("Clinic profile not found in database");
       return;
     }
 
-    // Find clinic by email (demo mode)
-    const clinic = clinics.find(c => c.email.toLowerCase() === loginEmail.toLowerCase());
-    if (clinic) {
-      onLogin(clinic);
-      toast.success(`Welcome back, ${clinic.name}!`);
-    } else {
-      toast.error('Invalid credentials. Try: priya@sevasadan.org');
-    }
-  };
+    const clinicData = clinicSnap.data();
 
-  const handleRegister = () => {
-    if (!regName || !regLocation || !regDistrict || !regState || !regContactPerson || !regPhone || !regEmail || !regPassword) {
-      toast.error('Please fill in all fields');
-      return;
-    }
+    // ✅ Send logged-in clinic to app
+    onLogin({
+      id: user.uid,
+      ...clinicData,
+    } as Clinic);
 
-    const newClinic: Omit<Clinic, 'id'> = {
+    toast.success(`Welcome back, ${clinicData.name}!`);
+
+  } catch (error: any) {
+    console.error(error);
+    toast.error("Invalid email or password");
+  }
+};
+
+
+  const handleRegister = async () => {
+  if (
+    !regName || !regLocation || !regDistrict || !regState ||
+    !regContactPerson || !regPhone || !regEmail || !regPassword
+  ) {
+    toast.error("Please fill in all fields");
+    return;
+  }
+
+  try {
+    // 🔐 Create Firebase Auth user
+    const userCredential = await createUserWithEmailAndPassword(
+      auth,
+      regEmail,
+      regPassword
+    );
+
+    const user = userCredential.user;
+
+    // 📄 Save clinic profile in Firestore
+    const newClinic: Omit<Clinic, "id"> = {
       name: regName,
       type: regType,
       location: regLocation,
@@ -64,9 +109,15 @@ export function AuthPage({ clinics, onLogin, onRegister }: AuthPageProps) {
       email: regEmail
     };
 
-    onRegister(newClinic);
-    toast.success('Registration successful! Please login.');
-  };
+    await setDoc(doc(db, "clinics", user.uid), newClinic);
+
+    toast.success("Clinic registered successfully! Please login.");
+
+  } catch (error: any) {
+    console.error(error);
+    toast.error(error.message);
+  }
+};
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4">
