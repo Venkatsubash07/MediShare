@@ -13,6 +13,37 @@ import { signInWithEmailAndPassword } from "firebase/auth";
 import { createUserWithEmailAndPassword } from "firebase/auth"
 import { doc, getDoc , setDoc} from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
+const INDIAN_STATES = [
+  "Andhra Pradesh",
+  "Arunachal Pradesh",
+  "Assam",
+  "Bihar",
+  "Chhattisgarh",
+  "Goa",
+  "Gujarat",
+  "Haryana",
+  "Himachal Pradesh",
+  "Jharkhand",
+  "Karnataka",
+  "Kerala",
+  "Madhya Pradesh",
+  "Maharashtra",
+  "Manipur",
+  "Meghalaya",
+  "Mizoram",
+  "Nagaland",
+  "Odisha",
+  "Punjab",
+  "Rajasthan",
+  "Sikkim",
+  "Tamil Nadu",
+  "Telangana",
+  "Tripura",
+  "Uttar Pradesh",
+  "Uttarakhand",
+  "West Bengal"
+];
+
 
 interface AuthPageProps {
   clinics: Clinic[];
@@ -197,7 +228,7 @@ export function AuthPage({ clinics, onLogin, onRegister }: AuthPageProps) {
                   <Input
                     id="login-password"
                     type="password"
-                    placeholder="••••••••"
+                    placeholder="Enter password"
                     value={loginPassword}
                     onChange={(e) => setLoginPassword(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
@@ -267,14 +298,21 @@ export function AuthPage({ clinics, onLogin, onRegister }: AuthPageProps) {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="reg-state">State *</Label>
-                  <Input
-                    id="reg-state"
-                    placeholder="e.g., Maharashtra"
-                    value={regState}
-                    onChange={(e) => setRegState(e.target.value)}
-                  />
+                  <Label>State *</Label>
+                  <Select value={regState} onValueChange={setRegState}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select state" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {INDIAN_STATES.map((state) => (
+                        <SelectItem key={state} value={state}>
+                          {state}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="reg-contact">Contact Person *</Label>
                   <Input
