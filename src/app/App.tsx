@@ -241,122 +241,6 @@ export default function App() {
 
   // return (
     
-  //   <div className="min-h-screen bg-gray-50">
-  //     <Toaster />
-
-  //     {/* HEADER */}
-  //     <header className="bg-white border-b sticky top-0 z-10">
-  //       <div className="container mx-auto px-4 py-4 flex justify-between">
-  //         <div className="flex items-center gap-3">
-  //           <div className="bg-gradient-to-br from-blue-600 to-indigo-600 p-2 rounded-lg">
-  //             <Building2 className="h-6 w-6 text-white" />
-  //           </div>
-  //           <div>
-  //             <h1 className="font-bold text-xl">MediShare Network</h1>
-  //             <p className="text-sm text-muted-foreground">
-  //               Inter-Clinic Medicine Inventory Sharing
-  //             </p>
-  //           </div>
-  //         </div>
-
-  //         <div className="flex items-center gap-4">
-  //           <div className="text-right">
-  //             <div className="font-semibold">{selectedClinic.name}</div>
-  //             <div className="text-sm text-muted-foreground">
-  //               {selectedClinic.location}, {selectedClinic.state}
-  //             </div>
-  //           </div>
-  //           <Button variant="outline" size="sm" onClick={handleLogout}>
-  //             <LogOut className="mr-2 h-4 w-4" />
-  //             Logout
-  //           </Button>
-  //         </div>
-  //       </div>
-  //     </header>
-
-  //     {/* MAIN */}
-  //     <main className="container mx-auto px-4 py-6">
-  //       <Tabs defaultValue="dashboard" className="space-y-6">
-  //         <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:inline-grid">
-  //           <TabsTrigger value="dashboard"><LayoutDashboard className="h-4 w-4" />Dashboard</TabsTrigger>
-  //           <TabsTrigger value="inventory"><Package className="h-4 w-4" />Inventory</TabsTrigger>
-  //           <TabsTrigger value="surplus"><TrendingUp className="h-4 w-4" />Surplus</TabsTrigger>
-  //           <TabsTrigger value="requests"><AlertTriangle className="h-4 w-4" />Requests</TabsTrigger>
-  //           <TabsTrigger value="matching"><Shuffle className="h-4 w-4" />Matching</TabsTrigger>
-  //           <TabsTrigger value="transfers"><ArrowLeftRight className="h-4 w-4" />Transfers</TabsTrigger>
-  //         </TabsList>
-
-  //         <TabsContent value="dashboard">
-  //           <Dashboard
-  //             clinic={selectedClinic}
-  //             inventory={inventory}
-  //             surplusPosts={surplusPosts}
-  //             requests={requests}
-  //             transfers={transfers}
-  //             medicines={medicines}
-  //           />
-  //         </TabsContent>
-
-  //         <TabsContent value="inventory">
-  //           <InventoryManagement
-  //             clinic={selectedClinic}
-  //             inventory={inventory}
-  //             medicines={medicines}
-  //             onAddInventory={handleAddInventory}
-  //             onAddMedicine={handleAddMedicine}
-  //           />
-  //         </TabsContent>
-
-  //         <TabsContent value="surplus">
-  //           <SurplusManagement
-  //             clinic={selectedClinic}
-  //             inventory={inventory}
-  //             surplusPosts={surplusPosts}
-  //             medicines={medicines}
-  //             onPostSurplus={handlePostSurplus}
-  //             onCancelSurplus={handleCancelSurplus}
-  //           />
-  //         </TabsContent>
-
-  //         <TabsContent value="requests">
-  //           <RequestManagement
-  //             clinic={selectedClinic}
-  //             requests={requests}
-  //             medicines={medicines}
-  //             onCreateRequest={handleCreateRequest}
-  //             onCancelRequest={handleCancelRequest}
-  //           />
-  //         </TabsContent>
-
-  //         <TabsContent value="matching">
-  //           <MatchingView
-  //             clinic={selectedClinic}
-  //             clinics={clinics}
-  //             inventory={inventory}
-  //             surplusPosts={surplusPosts}
-  //             requests={requests}
-  //             medicines={medicines}
-  //             onRequestTransfer={handleRequestTransfer}
-  //           />
-  //         </TabsContent>
-
-  //         <TabsContent value="transfers">
-  //           <TransferManagement
-  //             clinic={selectedClinic}
-  //             clinics={clinics}
-  //             transfers={transfers}
-  //             inventory={inventory}
-  //             medicines={medicines}
-  //             onApproveTransfer={handleApproveTransfer}
-  //             onRejectTransfer={handleRejectTransfer}
-  //             onCompleteTransfer={handleCompleteTransfer}
-  //             onSendTransfer={handleSendTransfer}
-  //           />
-  //         </TabsContent>
-
-  //       </Tabs>
-  //     </main>
-  //   </div>
   // );
 
  return (
@@ -371,12 +255,128 @@ export default function App() {
           onRegister={handleRegister}
         />
       ) : (
-        <div className="min-h-screen bg-gray-50">
-          {/* HEADER */}
-          ...
+        
+    <div className="min-h-screen bg-gray-50">
+      <Toaster />
+
+      {/* HEADER */}
+      <header className="bg-white border-b sticky top-0 z-10">
+        <div className="container mx-auto px-4 py-4 flex justify-between">
+          <div className="flex items-center gap-3">
+            <div className="bg-gradient-to-br from-blue-600 to-indigo-600 p-2 rounded-lg">
+              <Building2 className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h1 className="font-bold text-xl">MediShare Network</h1>
+              <p className="text-sm text-muted-foreground">
+                Inter-Clinic Medicine Inventory Sharing
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="text-right">
+              <div className="font-semibold">{selectedClinic.name}</div>
+              <div className="text-sm text-muted-foreground">
+                {selectedClinic.location}, {selectedClinic.state}
+              </div>
+            </div>
+            <Button variant="outline" size="sm" onClick={handleLogout}>
+              <LogOut className="mr-2 h-4 w-4" />
+              Logout
+            </Button>
+          </div>
         </div>
+      </header>
+
+      {/* MAIN */}
+      <main className="container mx-auto px-4 py-6">
+        <Tabs defaultValue="dashboard" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:inline-grid">
+            <TabsTrigger value="dashboard"><LayoutDashboard className="h-4 w-4" />Dashboard</TabsTrigger>
+            <TabsTrigger value="inventory"><Package className="h-4 w-4" />Inventory</TabsTrigger>
+            <TabsTrigger value="surplus"><TrendingUp className="h-4 w-4" />Surplus</TabsTrigger>
+            <TabsTrigger value="requests"><AlertTriangle className="h-4 w-4" />Requests</TabsTrigger>
+            <TabsTrigger value="matching"><Shuffle className="h-4 w-4" />Matching</TabsTrigger>
+            <TabsTrigger value="transfers"><ArrowLeftRight className="h-4 w-4" />Transfers</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="dashboard">
+            <Dashboard
+              clinic={selectedClinic}
+              inventory={inventory}
+              surplusPosts={surplusPosts}
+              requests={requests}
+              transfers={transfers}
+              medicines={medicines}
+            />
+          </TabsContent>
+
+          <TabsContent value="inventory">
+            <InventoryManagement
+              clinic={selectedClinic}
+              inventory={inventory}
+              medicines={medicines}
+              onAddInventory={handleAddInventory}
+              onAddMedicine={handleAddMedicine}
+            />
+          </TabsContent>
+
+          <TabsContent value="surplus">
+            <SurplusManagement
+              clinic={selectedClinic}
+              inventory={inventory}
+              surplusPosts={surplusPosts}
+              medicines={medicines}
+              onPostSurplus={handlePostSurplus}
+              onCancelSurplus={handleCancelSurplus}
+            />
+          </TabsContent>
+
+          <TabsContent value="requests">
+            <RequestManagement
+              clinic={selectedClinic}
+              requests={requests}
+              medicines={medicines}
+              onCreateRequest={handleCreateRequest}
+              onCancelRequest={handleCancelRequest}
+            />
+          </TabsContent>
+
+          <TabsContent value="matching">
+            <MatchingView
+              clinic={selectedClinic}
+              clinics={clinics}
+              inventory={inventory}
+              surplusPosts={surplusPosts}
+              requests={requests}
+              medicines={medicines}
+              onRequestTransfer={handleRequestTransfer}
+            />
+          </TabsContent>
+
+          <TabsContent value="transfers">
+            <TransferManagement
+              clinic={selectedClinic}
+              clinics={clinics}
+              transfers={transfers}
+              inventory={inventory}
+              medicines={medicines}
+              onApproveTransfer={handleApproveTransfer}
+              onRejectTransfer={handleRejectTransfer}
+              onCompleteTransfer={handleCompleteTransfer}
+              onSendTransfer={handleSendTransfer}
+            />
+          </TabsContent>
+
+        </Tabs>
+      </main>
+    </div>
       )}
     </>
+
+
+
   );
 
 }
